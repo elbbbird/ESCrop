@@ -88,6 +88,8 @@ public class CropImage extends MonitoredActivity {
     private IImageList mAllImages;
     private IImage mImage;
 
+    private int exifRotation;
+
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
@@ -133,6 +135,7 @@ public class CropImage extends MonitoredActivity {
 
         if (mBitmap == null) {
             Uri target = intent.getData();
+            exifRotation = Util.getExifRotation(Util.getFromMediaUri(this, getContentResolver(), target));
             mAllImages = ImageManager.makeImageList(mContentResolver, target,
                     ImageManager.SORT_ASCENDING);
             mImage = mAllImages.getImageForUri(target);
@@ -190,9 +193,13 @@ public class CropImage extends MonitoredActivity {
                 mHandler.post(new Runnable() {
                     public void run() {
                         if (b != mBitmap && b != null) {
-                            mImageView.setImageBitmapResetBase(b, true);
+                            //rotate
+                            Matrix matrix = new Matrix();
+                            matrix.setRotate(exifRotation);
+                            final Bitmap bb = Bitmap.createBitmap(b, 0, 0, b.getWidth(), b.getHeight(), matrix, true);
+                            mImageView.setImageBitmapResetBase(bb, true);
                             mBitmap.recycle();
-                            mBitmap = b;
+                            mBitmap = bb;
                         }
                         if (mImageView.getScale() == 1F) {
                             mImageView.center(true, true);
